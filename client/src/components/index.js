@@ -1,12 +1,12 @@
 import AppBanner from './AppBanner'
-import DeleteModal from './DeleteModal'
+import MUIDeleteModal from './MUIDeleteModal'
 import EditToolbar from './EditToolbar'
 import HomeScreen from './HomeScreen'
 import HomeWrapper from './HomeWrapper'
 import ListCard from './ListCard'
 import LoginScreen from './LoginScreen'
 import RegisterScreen from './RegisterScreen'
-import SplashScreen from './SplashScreen'
+import SplashScreen from './WelcomeScreen'
 import Statusbar from './Statusbar'
 import Top5Item from './Top5Item'
 import WorkspaceScreen from './WorkspaceScreen'
@@ -18,7 +18,7 @@ import WorkspaceScreen from './WorkspaceScreen'
 */
 export { 
     AppBanner, 
-    DeleteModal, 
+    MUIDeleteModal, 
     EditToolbar, 
     HomeScreen,
     HomeWrapper,
