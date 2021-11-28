@@ -33,6 +33,7 @@ createTop5List = (req, res) => {
                         })
                     })
                     .catch(error => {
+                        console.log(error);
                         return res.status(400).json({
                             errorMessage: 'Top 5 List Not Created!'
                         })
@@ -149,6 +150,49 @@ getTop5Lists = async (req, res) => {
         return res.status(200).json({ success: true, data: top5Lists })
     }).catch(err => console.log(err))
 }
+
+searchTop5List = async (req, res) => {
+    const body = req.body;
+    if (!body) {
+        return res.status(400).json({
+            errorMessage: 'Improperly formatted request',
+        })
+    }
+
+    const search = body.search;
+    const listView = body.listView;
+    const username = body.username;
+
+    if(search === ""){
+        if(listView === "yours"){
+
+            await Top5List.find({ username: username }, (err, top5Lists) => {
+                console.log("found Top5Lists: " + JSON.stringify(top5Lists));
+                if (err) {
+                    return res.status(400).json({ success: false, error: err })
+                }
+                if (!top5Lists) {
+                    console.log("!top5Lists.length");
+                    return res
+                        .status(404)
+                        .json({ success: false, error: 'Top 5 Lists not found' })
+                }
+                else {
+                    console.log("Send the Top5Lists");
+                    return res.status(200).json({ success: true, top5Lists: top5Lists})
+                }
+            }).catch(err => console.log(err))
+
+
+            
+        }
+
+    }
+    else{
+
+    }
+}
+
 updateTop5List = async (req, res) => {
     const body = req.body
     console.log("updateTop5List: " + JSON.stringify(body));
@@ -215,5 +259,7 @@ module.exports = {
     getTop5ListById,
     getTop5ListPairs,
     getTop5Lists,
-    updateTop5List
+    updateTop5List,
+    searchTop5List,
+
 }

@@ -1,9 +1,6 @@
 import { createContext, useContext, useState } from "react";
 import { useHistory } from "react-router-dom";
-import jsTPS from "../common/jsTPS";
 import api from "./store-request-api";
-import MoveItem_Transaction from "../transactions/MoveItem_Transaction";
-import UpdateItem_Transaction from "../transactions/UpdateItem_Transaction";
 import AuthContext from "../auth";
 /*
     This is our global data store. Note that it uses the Flux design pattern,
@@ -29,10 +26,8 @@ export const GlobalStoreActionType = {
   SET_ITEM_EDIT_ACTIVE: "SET_ITEM_EDIT_ACTIVE",
   SET_LIST_NAME_EDIT_ACTIVE: "SET_LIST_NAME_EDIT_ACTIVE",
   SET_IS_GUEST: "SET_IS_GUEST",
+  SET_CURRENT_LISTS: "SET_CURRENT_LISTS",
 };
-
-// WE'LL NEED THIS TO PROCESS TRANSACTIONS
-const tps = new jsTPS();
 
 // WITH THIS WE'RE MAKING OUR GLOBAL DATA STORE
 // AVAILABLE TO THE REST OF THE APPLICATION
@@ -46,6 +41,8 @@ function GlobalStoreContextProvider(props) {
     itemActive: false,
     listMarkedForDeletion: null,
     isGuest: false,
+    listView: "yours",
+    currentLists: null,
   });
   const history = useHistory();
 
@@ -70,6 +67,8 @@ function GlobalStoreContextProvider(props) {
           isItemEditActive: false,
           listMarkedForDeletion: null,
           isGuest: store.isGuest,
+          listView: store.listView,
+          currentLists: store.currentLists,
         });
       }
       // STOP EDITING THE CURRENT LIST
@@ -82,6 +81,8 @@ function GlobalStoreContextProvider(props) {
           isItemEditActive: false,
           listMarkedForDeletion: null,
           isGuest: store.isGuest,
+          listView: store.listView,
+          currentLists: store.currentLists,
         });
       }
       // CREATE A NEW LIST
@@ -94,6 +95,8 @@ function GlobalStoreContextProvider(props) {
           isItemEditActive: false,
           listMarkedForDeletion: null,
           isGuest: store.isGuest,
+          listView: store.listView,
+          currentLists: store.currentLists,
         });
       }
       // GET ALL THE LISTS SO WE CAN PRESENT THEM
@@ -106,6 +109,8 @@ function GlobalStoreContextProvider(props) {
           isItemEditActive: false,
           listMarkedForDeletion: null,
           isGuest: store.isGuest,
+          listView: store.listView,
+          currentLists: store.currentLists,
         });
       }
       // PREPARE TO DELETE A LIST
@@ -118,6 +123,8 @@ function GlobalStoreContextProvider(props) {
           isItemEditActive: false,
           listMarkedForDeletion: payload,
           isGuest: store.isGuest,
+          listView: store.listView,
+          currentLists: store.currentLists,
         });
       }
       // PREPARE TO DELETE A LIST
@@ -130,6 +137,8 @@ function GlobalStoreContextProvider(props) {
           isItemEditActive: false,
           listMarkedForDeletion: null,
           isGuest: store.isGuest,
+          listView: store.listView,
+          currentLists: store.currentLists,
         });
       }
       // UPDATE A LIST
@@ -142,6 +151,8 @@ function GlobalStoreContextProvider(props) {
           isItemEditActive: false,
           listMarkedForDeletion: null,
           isGuest: store.isGuest,
+          listView: store.listView,
+          currentLists: store.currentLists,
         });
       }
       // START EDITING A LIST ITEM
@@ -154,6 +165,8 @@ function GlobalStoreContextProvider(props) {
           isItemEditActive: true,
           listMarkedForDeletion: null,
           isGuest: store.isGuest,
+          listView: store.listView,
+          currentLists: store.currentLists,
         });
       }
       // START EDITING A LIST NAME
@@ -166,6 +179,8 @@ function GlobalStoreContextProvider(props) {
           isItemEditActive: false,
           listMarkedForDeletion: null,
           isGuest: store.isGuest,
+          listView: store.listView,
+          currentLists: store.currentLists,
         });
       }
 
@@ -178,6 +193,22 @@ function GlobalStoreContextProvider(props) {
           isItemEditActive: store.isItemEditActive,
           listMarkedForDeletion: store.listMarkedForDeletion,
           isGuest: payload,
+          listView: store.listView,
+          currentLists: store.currentLists,
+        });
+      }
+
+      case GlobalStoreActionType.SET_CURRENT_LISTS: {
+        return setStore({
+          idNamePairs: store.idNamePairs,
+          currentList: store.currentList,
+          newListCounter: store.newListCounter,
+          isListNameEditActive: store.isListNameEditActive,
+          isItemEditActive: store.isItemEditActive,
+          listMarkedForDeletion: store.listMarkedForDeletion,
+          isGuest: store.isGuest,
+          listView: store.listView,
+          currentLists: payload,
         });
       }
       default:
@@ -188,6 +219,20 @@ function GlobalStoreContextProvider(props) {
   // THESE ARE THE FUNCTIONS THAT WILL UPDATE OUR STORE AND
   // DRIVE THE STATE OF THE APPLICATION. WE'LL CALL THESE IN
   // RESPONSE TO EVENTS INSIDE OUR COMPONENTS.
+
+  store.newSearch = async function (search) {
+    let response = await api.searchTop5List(
+      search,
+      store.listView,
+      auth.user.username
+    );
+    if (response.status === 200) {
+      storeReducer({
+        type: GlobalStoreActionType.SET_CURRENT_LISTS,
+        payload: response.data.top5Lists,
+      });
+    }
+  };
 
   // THIS FUNCTION PROCESSES CHANGING A LIST NAME
   store.changeListName = async function (id, newName) {
@@ -225,7 +270,6 @@ function GlobalStoreContextProvider(props) {
       payload: {},
     });
 
-    tps.clearAllTransactions();
     history.push("/");
   };
 
@@ -242,11 +286,11 @@ function GlobalStoreContextProvider(props) {
     const response = await api.createTop5List(
       newListName,
       ["?", "?", "?", "?", "?"],
-      auth.user.email
+      auth.user.email,
+      auth.user.username
     );
     console.log("createNewList response: " + response);
     if (response.status === 201) {
-      tps.clearAllTransactions();
       let newList = response.data.top5List;
       storeReducer({
         type: GlobalStoreActionType.CREATE_NEW_LIST,
@@ -330,48 +374,6 @@ function GlobalStoreContextProvider(props) {
     }
   };
 
-  store.addMoveItemTransaction = function (start, end) {
-    let transaction = new MoveItem_Transaction(store, start, end);
-    tps.addTransaction(transaction);
-  };
-
-  store.addUpdateItemTransaction = function (index, newText) {
-    let oldText = store.currentList.items[index];
-    let transaction = new UpdateItem_Transaction(
-      store,
-      index,
-      oldText,
-      newText
-    );
-    tps.addTransaction(transaction);
-  };
-
-  store.moveItem = function (start, end) {
-    start -= 1;
-    end -= 1;
-    if (start < end) {
-      let temp = store.currentList.items[start];
-      for (let i = start; i < end; i++) {
-        store.currentList.items[i] = store.currentList.items[i + 1];
-      }
-      store.currentList.items[end] = temp;
-    } else if (start > end) {
-      let temp = store.currentList.items[start];
-      for (let i = start; i > end; i--) {
-        store.currentList.items[i] = store.currentList.items[i - 1];
-      }
-      store.currentList.items[end] = temp;
-    }
-
-    // NOW MAKE IT OFFICIAL
-    store.updateCurrentList();
-  };
-
-  store.updateItem = function (index, newItem) {
-    store.currentList.items[index] = newItem;
-    store.updateCurrentList();
-  };
-
   store.updateCurrentList = async function () {
     const response = await api.updateTop5ListById(
       store.currentList._id,
@@ -385,21 +387,6 @@ function GlobalStoreContextProvider(props) {
     }
   };
 
-  store.undo = function () {
-    tps.undoTransaction();
-  };
-
-  store.redo = function () {
-    tps.doTransaction();
-  };
-
-  store.canUndo = function () {
-    return tps.hasTransactionToUndo();
-  };
-
-  store.canRedo = function () {
-    return tps.hasTransactionToRedo();
-  };
 
   // THIS FUNCTION ENABLES THE PROCESS OF EDITING A LIST NAME
   store.setIsListNameEditActive = function () {
