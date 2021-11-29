@@ -11,6 +11,7 @@ import ThumbDownIcon from "@mui/icons-material/ThumbDown";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import List from "@mui/material/List";
+import Link from "@mui/material/Link";
 
 import Grid from "@mui/material/Grid";
 
@@ -86,6 +87,11 @@ function ListCard(props) {
     event.stopPropagation();
     let ex = !expanded;
     setExpanded(ex);
+  }
+
+  function handleEditList(event) {
+    event.stopPropagation();
+    store.setCurrentList(top5List._id);
   }
 
   function handleUpdateComment(event) {
@@ -165,6 +171,26 @@ function ListCard(props) {
     </List>
   );
 
+  let editOrPublishedElement = (
+    <Link
+      component="button"
+      variant="body2"
+      onClick={(event) => {
+        handleEditList(event);
+      }}
+    >
+      Edit
+    </Link>
+  );
+
+  if (top5List.published) {
+    editOrPublishedElement = (
+      <Typography display="inline">
+        {"Published: " + top5List.publishedDate}
+      </Typography>
+    );
+  }
+
   let cardElement = (
     <ListItem
       id={top5List._id}
@@ -231,9 +257,7 @@ function ListCard(props) {
           <Typography display="inline">{"Views: " + top5List.views}</Typography>
         </Grid>
         <Grid item xs={11}>
-          <Typography display="inline">
-            {"Published: " + top5List.publishedDate}
-          </Typography>
+          {editOrPublishedElement}
         </Grid>
         <Grid item xs={1}>
           <IconButton
@@ -323,9 +347,7 @@ function ListCard(props) {
           </Grid>
 
           <Grid item xs={9}>
-            <Typography display="inline">
-              {"Published: " + top5List.publishedDate}
-            </Typography>
+            {editOrPublishedElement}
           </Grid>
           <Grid item xs={2}>
             <Typography display="inline">

@@ -220,6 +220,25 @@ function GlobalStoreContextProvider(props) {
   // DRIVE THE STATE OF THE APPLICATION. WE'LL CALL THESE IN
   // RESPONSE TO EVENTS INSIDE OUR COMPONENTS.
 
+  store.saveList = async function (name, items) {
+    store.currentList.name = name;
+    store.currentList.items = items;
+    store.updateCurrentList().then(() => history.push("/"));
+  };
+
+  store.publishList = async function () {
+    console.log(store.currentList);
+    store.currentList.published = true;
+    var today = new Date();
+    store.currentList.publishedDate =
+      today.getFullYear() +
+      "-" +
+      (today.getMonth() + 1) +
+      "-" +
+      today.getDate();
+    store.updateCurrentList().then(() => history.push("/"));
+  };
+
   store.newSearch = async function (search) {
     let response = await api.searchTop5List(
       search,
@@ -386,7 +405,6 @@ function GlobalStoreContextProvider(props) {
       });
     }
   };
-
 
   // THIS FUNCTION ENABLES THE PROCESS OF EDITING A LIST NAME
   store.setIsListNameEditActive = function () {
