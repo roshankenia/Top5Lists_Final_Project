@@ -65,8 +65,8 @@ function ListCard(props) {
 
   async function handleDeleteList(event, id) {
     event.stopPropagation();
-    let _id = event.target.id;
-    _id = ("" + _id).substring("delete-list-".length);
+    // let _id = event.target.id;
+    // _id = ("" + _id).substring("delete-list-".length);
     store.markListForDeletion(id);
   }
 
@@ -81,8 +81,12 @@ function ListCard(props) {
     setText(event.target.value);
   }
 
-  function handleLike(event) {}
-  function handleDislike(event) {}
+  function handleLike(event) {
+    event.stopPropagation();
+  }
+  function handleDislike(event) {
+    event.stopPropagation();
+  }
   function handleExpand(event) {
     event.stopPropagation();
     let ex = !expanded;
@@ -113,7 +117,7 @@ function ListCard(props) {
       }}
     >
       {top5List.items.map((item, index) => (
-        <ListItem>
+        <ListItem key={index}>
           <Typography>{index + 1 + ". " + item}</Typography>
         </ListItem>
       ))}
@@ -127,6 +131,7 @@ function ListCard(props) {
     <List>
       {commentUsers.map((user, index) => (
         <ListItem
+          key={index}
           sx={{
             border: 2,
             borderRadius: 8,

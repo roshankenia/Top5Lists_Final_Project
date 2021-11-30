@@ -160,9 +160,13 @@ searchTop5List = async (req, res) => {
   const listView = body.listView;
   const username = body.username;
 
-  if (search === "") {
-    if (listView === "yours") {
-      await Top5List.find({ username: username }, (err, top5Lists) => {
+  console.log(listView);
+  console.log(search);
+
+  if (listView === "yours") {
+    await Top5List.find(
+      { username: username, name: { $regex: "^" + search } },
+      (err, top5Lists) => {
         console.log("found Top5Lists: " + JSON.stringify(top5Lists));
         if (err) {
           return res.status(400).json({ success: false, error: err });
@@ -176,9 +180,43 @@ searchTop5List = async (req, res) => {
           console.log("Send the Top5Lists");
           return res.status(200).json({ success: true, top5Lists: top5Lists });
         }
-      }).catch((err) => console.log(err));
-    }
-  } else {
+      }
+    ).catch((err) => console.log(err));
+  } else if (listView === "all") {
+    await Top5List.find(
+      { published: { $eq: true }, name: { $regex: "^" + search } },
+      (err, top5Lists) => {
+        console.log("found Top5Lists: " + JSON.stringify(top5Lists));
+        if (err) {
+          return res.status(400).json({ success: false, error: err });
+        }
+        if (!top5Lists) {
+          console.log("!top5Lists.length");
+          return res
+            .status(404)
+            .json({ success: false, error: "Top 5 Lists not found" });
+        } else {
+          console.log("Send the Top5Lists");
+          return res.status(200).json({ success: true, top5Lists: top5Lists });
+        }
+      }
+    ).catch((err) => console.log(err));
+  } else if (listView === "users") {
+    await Top5List.find({published: { $eq: true }, username: search }, (err, top5Lists) => {
+      console.log("found Top5Lists: " + JSON.stringify(top5Lists));
+      if (err) {
+        return res.status(400).json({ success: false, error: err });
+      }
+      if (!top5Lists) {
+        console.log("!top5Lists.length");
+        return res
+          .status(404)
+          .json({ success: false, error: "Top 5 Lists not found" });
+      } else {
+        console.log("Send the Top5Lists");
+        return res.status(200).json({ success: true, top5Lists: top5Lists });
+      }
+    }).catch((err) => console.log(err));
   }
 };
 

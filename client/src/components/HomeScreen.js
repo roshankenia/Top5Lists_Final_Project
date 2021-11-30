@@ -2,6 +2,8 @@ import React, { useContext, useEffect, useState } from "react";
 import { GlobalStoreContext } from "../store";
 import ListCard from "./ListCard.js";
 import MUIDeleteModal from "./MUIDeleteModal";
+import Statusbar from "./Statusbar";
+
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
@@ -28,6 +30,7 @@ import AuthContext from "../auth";
     @author McKilla Gorilla
 */
 const HomeScreen = () => {
+  const { innerWidth: width, innerHeight: height } = window;
   const { store } = useContext(GlobalStoreContext);
 
   //Keeps track if a list is currently being edited
@@ -44,32 +47,41 @@ const HomeScreen = () => {
   function handleKeyPress(event) {
     if (event.code === "Enter") {
       let text = event.target.value;
-      // store.newSearch(text);
+      console.log(text);
+      store.newSearch(text);
     }
   }
 
   function changeLists(event, view) {
     event.stopPropagation();
-    store.newSearch("");
+    store.updateView(view);
   }
 
   let listCard = <List></List>;
   if (store.currentLists) {
     listCard = (
-      <List sx={{ height: "50%", marginTop: "20px" }}>
+      <List
+        sx={{
+          width: "100%",
+          bgcolor: "background.paper",
+          position: "relative",
+          overflow: "auto",
+          maxHeight: Math.round(height / 1.75),
+        }}
+      >
         {store.currentLists.map((list) => (
-          <ListCard top5List={list} />
+          <ListCard key={list._id} top5List={list} />
         ))}
       </List>
     );
   }
   return (
-    <Box sx={{ height: "75%", bgcolor: "yellow" }}>
-      <Box sx={{ height: "25%" }}>
+    <Box>
+      <Box>
         <Grid container spacing={2}>
           <Grid item xs={10}>
             <IconButton
-              aria-label="your lists"
+              aria-label="yours"
               color="primary"
               onClick={(event) => {
                 changeLists(event, "yours");
@@ -82,7 +94,14 @@ const HomeScreen = () => {
                 }}
               />
             </IconButton>
-            <IconButton aria-label="all lists" color="primary" size="large">
+            <IconButton
+              aria-label="all lists"
+              color="primary"
+              size="large"
+              onClick={(event) => {
+                changeLists(event, "all");
+              }}
+            >
               <PeopleIcon
                 sx={{
                   width: 60,
@@ -90,7 +109,14 @@ const HomeScreen = () => {
                 }}
               />
             </IconButton>
-            <IconButton aria-label="user lists" color="primary" size="large">
+            <IconButton
+              aria-label="user lists"
+              color="primary"
+              size="large"
+              onClick={(event) => {
+                changeLists(event, "users");
+              }}
+            >
               <PersonIcon
                 sx={{
                   width: 60,
@@ -137,12 +163,11 @@ const HomeScreen = () => {
           </Grid>
         </Grid>
       </Box>
-      <Box sx={{ height: "50%", bgcolor: "purple" }}>
-        <div id="list-selector-list">
-          {listCard}
-          <MUIDeleteModal />
-        </div>
+      <Box>
+        {listCard}
+        <MUIDeleteModal />
       </Box>
+      <Statusbar />
     </Box>
   );
 };

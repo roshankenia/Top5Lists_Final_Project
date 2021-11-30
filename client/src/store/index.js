@@ -27,6 +27,7 @@ export const GlobalStoreActionType = {
   SET_LIST_NAME_EDIT_ACTIVE: "SET_LIST_NAME_EDIT_ACTIVE",
   SET_IS_GUEST: "SET_IS_GUEST",
   SET_CURRENT_LISTS: "SET_CURRENT_LISTS",
+  SET_LIST_VIEW: "SET_LIST_VIEW",
 };
 
 // WITH THIS WE'RE MAKING OUR GLOBAL DATA STORE
@@ -43,6 +44,7 @@ function GlobalStoreContextProvider(props) {
     isGuest: false,
     listView: "yours",
     currentLists: null,
+    search: null,
   });
   const history = useHistory();
 
@@ -69,6 +71,7 @@ function GlobalStoreContextProvider(props) {
           isGuest: store.isGuest,
           listView: store.listView,
           currentLists: store.currentLists,
+          search: store.search,
         });
       }
       // STOP EDITING THE CURRENT LIST
@@ -83,6 +86,7 @@ function GlobalStoreContextProvider(props) {
           isGuest: store.isGuest,
           listView: store.listView,
           currentLists: store.currentLists,
+          search: store.search,
         });
       }
       // CREATE A NEW LIST
@@ -97,6 +101,7 @@ function GlobalStoreContextProvider(props) {
           isGuest: store.isGuest,
           listView: store.listView,
           currentLists: store.currentLists,
+          search: store.search,
         });
       }
       // GET ALL THE LISTS SO WE CAN PRESENT THEM
@@ -111,6 +116,7 @@ function GlobalStoreContextProvider(props) {
           isGuest: store.isGuest,
           listView: store.listView,
           currentLists: store.currentLists,
+          search: store.search,
         });
       }
       // PREPARE TO DELETE A LIST
@@ -125,6 +131,7 @@ function GlobalStoreContextProvider(props) {
           isGuest: store.isGuest,
           listView: store.listView,
           currentLists: store.currentLists,
+          search: store.search,
         });
       }
       // PREPARE TO DELETE A LIST
@@ -139,6 +146,7 @@ function GlobalStoreContextProvider(props) {
           isGuest: store.isGuest,
           listView: store.listView,
           currentLists: store.currentLists,
+          search: store.search,
         });
       }
       // UPDATE A LIST
@@ -153,6 +161,7 @@ function GlobalStoreContextProvider(props) {
           isGuest: store.isGuest,
           listView: store.listView,
           currentLists: store.currentLists,
+          search: store.search,
         });
       }
       // START EDITING A LIST ITEM
@@ -167,6 +176,7 @@ function GlobalStoreContextProvider(props) {
           isGuest: store.isGuest,
           listView: store.listView,
           currentLists: store.currentLists,
+          search: store.search,
         });
       }
       // START EDITING A LIST NAME
@@ -181,6 +191,7 @@ function GlobalStoreContextProvider(props) {
           isGuest: store.isGuest,
           listView: store.listView,
           currentLists: store.currentLists,
+          search: store.search,
         });
       }
 
@@ -195,6 +206,22 @@ function GlobalStoreContextProvider(props) {
           isGuest: payload,
           listView: store.listView,
           currentLists: store.currentLists,
+          search: store.search,
+        });
+      }
+
+      case GlobalStoreActionType.SET_LIST_VIEW: {
+        return setStore({
+          idNamePairs: store.idNamePairs,
+          currentList: store.currentList,
+          newListCounter: store.newListCounter,
+          isListNameEditActive: store.isListNameEditActive,
+          isItemEditActive: store.isItemEditActive,
+          listMarkedForDeletion: store.listMarkedForDeletion,
+          isGuest: store.isGuest,
+          listView: payload.view,
+          currentLists: payload.top5Lists,
+          search: payload.search,
         });
       }
 
@@ -208,7 +235,8 @@ function GlobalStoreContextProvider(props) {
           listMarkedForDeletion: store.listMarkedForDeletion,
           isGuest: store.isGuest,
           listView: store.listView,
-          currentLists: payload,
+          currentLists: payload.top5Lists,
+          search: payload.search,
         });
       }
       default:
@@ -219,6 +247,43 @@ function GlobalStoreContextProvider(props) {
   // THESE ARE THE FUNCTIONS THAT WILL UPDATE OUR STORE AND
   // DRIVE THE STATE OF THE APPLICATION. WE'LL CALL THESE IN
   // RESPONSE TO EVENTS INSIDE OUR COMPONENTS.
+
+  store.updateView = async function (view) {
+    let search = "";
+
+    if (view === "yours" || view === "all") {
+      let response = await api.searchTop5List(search, view, auth.user.username);
+      if (response.status === 200) {
+        console.log(response.data.top5Lists);
+        storeReducer({
+          type: GlobalStoreActionType.SET_LIST_VIEW,
+          payload: {
+            top5Lists: response.data.top5Lists,
+            search: search,
+            view: view,
+          },
+        });
+      } else {
+        console.log(response);
+      }
+    } else if (view === "users") {
+      storeReducer({
+        type: GlobalStoreActionType.SET_LIST_VIEW,
+        payload: {
+          top5Lists: null,
+          search: search,
+          view: view,
+        },
+      });
+    }
+  };
+
+  store.changeView = async function (view) {
+    storeReducer({
+      type: GlobalStoreActionType.SET_LIST_VIEW,
+      payload: view,
+    });
+  };
 
   store.saveList = async function (name, items) {
     store.currentList.name = name;
@@ -246,10 +311,13 @@ function GlobalStoreContextProvider(props) {
       auth.user.username
     );
     if (response.status === 200) {
+      console.log(response.data.top5Lists);
       storeReducer({
         type: GlobalStoreActionType.SET_CURRENT_LISTS,
-        payload: response.data.top5Lists,
+        payload: { top5Lists: response.data.top5Lists, search: search },
       });
+    } else {
+      console.log(response);
     }
   };
 
@@ -390,6 +458,27 @@ function GlobalStoreContextProvider(props) {
         });
         history.push("/top5list/" + top5List._id);
       }
+    }
+  };
+
+  store.updateLikes = async function (top5List) {
+    if(top5List.likes.includes(auth.user.username)){
+      let index = top5List.likes.indexOf(auth.user.username)
+      top5List.likes.splice(index, 1);
+    }
+    else{
+      top5List.likes.push(auth.user.username);
+    }
+
+    if(top5List.dislikes.includes(auth.user.username)){
+      let index = top5List.dislikes.indexOf(auth.user.username)
+      top5List.dislikes.splice(index, 1);
+    }
+  };
+
+  store.updateList = async function (top5List) {
+    const response = await api.updateTop5ListById(top5List._id, top5List);
+    if (response.status === 200) {
     }
   };
 
