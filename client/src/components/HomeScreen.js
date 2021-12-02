@@ -8,6 +8,8 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 
 import PersonIcon from "@mui/icons-material/Person";
 import PeopleIcon from "@mui/icons-material/People";
@@ -41,6 +43,15 @@ const HomeScreen = () => {
 
   const { auth } = useContext(AuthContext);
 
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const open = Boolean(anchorEl);
+  const handleMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
   function handleUpdateSearch(event) {
     setSearch(event.target.value);
   }
@@ -55,6 +66,12 @@ const HomeScreen = () => {
   function changeLists(event, view) {
     event.stopPropagation();
     store.updateView(view);
+  }
+
+  function handleSort(event, sort) {
+    event.stopPropagation();
+    store.sortLists(sort);
+    handleMenuClose();
   }
 
   let listCard = <List></List>;
@@ -152,7 +169,15 @@ const HomeScreen = () => {
             <Typography display="inline" variant="h4">
               Sort by
             </Typography>
-            <IconButton aria-label="sort" color="primary" size="large">
+            <IconButton
+              aria-label="sort"
+              color="primary"
+              size="large"
+              aria-controls="basic-menu"
+              aria-haspopup="true"
+              aria-expanded={open ? "true" : undefined}
+              onClick={handleMenuClick}
+            >
               <SortIcon
                 sx={{
                   width: 60,
@@ -160,6 +185,52 @@ const HomeScreen = () => {
                 }}
               />
             </IconButton>
+
+            <Menu
+              id="basic-menu"
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleMenuClose}
+              MenuListProps={{
+                "aria-labelledby": "basic-button",
+              }}
+            >
+              <MenuItem
+                onClick={(event) => {
+                  handleSort(event, "newest date");
+                }}
+              >
+                Publish Date (Newest){" "}
+              </MenuItem>
+              <MenuItem
+                onClick={(event) => {
+                  handleSort(event, "oldest date");
+                }}
+              >
+                Publish Date (Oldest)
+              </MenuItem>
+              <MenuItem
+                onClick={(event) => {
+                  handleSort(event, "views");
+                }}
+              >
+                Views
+              </MenuItem>
+              <MenuItem
+                onClick={(event) => {
+                  handleSort(event, "likes");
+                }}
+              >
+                Likes
+              </MenuItem>
+              <MenuItem
+                onClick={(event) => {
+                  handleSort(event, "dislikes");
+                }}
+              >
+                Dislikes
+              </MenuItem>
+            </Menu>
           </Grid>
         </Grid>
       </Box>

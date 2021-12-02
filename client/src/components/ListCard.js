@@ -70,27 +70,25 @@ function ListCard(props) {
     store.markListForDeletion(id);
   }
 
-  function handleKeyPress(event) {
-    if (event.code === "Enter") {
-      let id = event.target.id.substring("list-".length);
-      store.changeListName(id, text);
-      toggleEdit();
-    }
-  }
   function handleUpdateText(event) {
     setText(event.target.value);
   }
 
   function handleLike(event) {
     event.stopPropagation();
+    store.updateLikes(top5List);
   }
   function handleDislike(event) {
     event.stopPropagation();
+    store.updateDislikes(top5List);
   }
   function handleExpand(event) {
     event.stopPropagation();
     let ex = !expanded;
     setExpanded(ex);
+    if (ex) {
+      store.updateViews(top5List);
+    }
   }
 
   function handleEditList(event) {
@@ -104,7 +102,8 @@ function ListCard(props) {
   function handleKeyPress(event) {
     if (event.code === "Enter") {
       let text = event.target.value;
-      // store.newSearch(text);
+      store.addComment(top5List, text);
+      setComment("");
     }
   }
 
@@ -124,36 +123,46 @@ function ListCard(props) {
     </List>
   );
 
-  let commentUsers = Object.keys(top5List.comments);
-  let commentStrings = Object.values(top5List.comments);
+  let commentStrings = Object.keys(top5List.comments);
+  let commentUsers = Object.values(top5List.comments);
 
   let comments = (
-    <List>
-      {commentUsers.map((user, index) => (
-        <ListItem
-          key={index}
-          sx={{
-            border: 2,
-            borderRadius: 8,
-            width: "100%",
-            marginTop: "2px",
-          }}
-        >
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <Typography display="inline" style={{ fontSize: "12pt" }}>
-                {user}
-              </Typography>
+    <Box>
+      <List
+        sx={{
+          width: "100%",
+          bgcolor: "background.paper",
+          position: "relative",
+          overflow: "auto",
+          maxHeight: 200,
+        }}
+      >
+        {commentUsers.map((user, index) => (
+          <ListItem
+            key={index}
+            sx={{
+              border: 2,
+              borderRadius: 8,
+              width: "100%",
+              marginTop: "2px",
+            }}
+          >
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Typography display="inline" style={{ fontSize: "12pt" }}>
+                  {user}
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography display="inline" style={{ fontSize: "12pt" }}>
+                  {commentStrings[index]}
+                </Typography>
+              </Grid>
             </Grid>
-            <Grid item xs={12}>
-              <Typography display="inline" style={{ fontSize: "12pt" }}>
-                {commentStrings[index]}
-              </Typography>
-            </Grid>
-          </Grid>
-        </ListItem>
-      ))}
-      <ListItem
+          </ListItem>
+        ))}
+      </List>
+      <Box
         sx={{
           border: 2,
           borderRadius: 8,
@@ -163,17 +172,18 @@ function ListCard(props) {
       >
         <TextField
           label="Comment"
-          sx={{ width: "100%" }}
+          sx={{ width: "100%"}}
           margin="normal"
           id={"comment"}
           name="comment"
           onKeyPress={handleKeyPress}
           onChange={handleUpdateComment}
-          inputProps={{ style: { fontSize: 18 } }}
-          InputLabelProps={{ style: { fontSize: 18 } }}
+          value={comment}
+          inputProps={{ style: { fontSize: 14 } }}
+          InputLabelProps={{ style: { fontSize: 14 } }}
         />
-      </ListItem>
-    </List>
+      </Box>
+    </Box>
   );
 
   let editOrPublishedElement = (

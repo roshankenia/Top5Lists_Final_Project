@@ -34,7 +34,7 @@ export const createTop5List = (newListName, newItems, userEmail, username) => {
     comments: {},
     likes: [],
     dislikes: [],
-    views: 0
+    views: 0,
   });
 };
 export const deleteTop5ListById = (id) => api.delete(`/top5list/${id}`);
@@ -47,8 +47,19 @@ export const updateTop5ListById = (id, top5List) => {
   });
 };
 
+export const updateTop5ListByIdWithoutUser = (id, top5List) => {
+  return api.put(`/top5list/nouser/${id}`, {
+    // SPECIFY THE PAYLOAD
+    top5List: top5List,
+  });
+};
+
 export const searchTop5List = (search, listView, username) =>
-  api.post(`/search/top5list/`, { search: search, listView: listView, username: username });
+  api.post(`/search/top5list/`, {
+    search: search,
+    listView: listView,
+    username: username,
+  });
 
 const apis = {
   createTop5List,
@@ -57,6 +68,7 @@ const apis = {
   getTop5ListPairs,
   updateTop5ListById,
   searchTop5List,
+  updateTop5ListByIdWithoutUser,
 };
 
 export default apis;

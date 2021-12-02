@@ -232,7 +232,7 @@ function GlobalStoreContextProvider(props) {
           newListCounter: store.newListCounter,
           isListNameEditActive: store.isListNameEditActive,
           isItemEditActive: store.isItemEditActive,
-          listMarkedForDeletion: store.listMarkedForDeletion,
+          listMarkedForDeletion: null,
           isGuest: store.isGuest,
           listView: store.listView,
           currentLists: payload.top5Lists,
@@ -247,6 +247,70 @@ function GlobalStoreContextProvider(props) {
   // THESE ARE THE FUNCTIONS THAT WILL UPDATE OUR STORE AND
   // DRIVE THE STATE OF THE APPLICATION. WE'LL CALL THESE IN
   // RESPONSE TO EVENTS INSIDE OUR COMPONENTS.
+
+  store.sortLists = function (sort) {
+    console.log(sort);
+    let sortedLists = store.currentLists;
+    if (sort === "views") {
+      sortedLists = sortedLists.sort(function (a, b) {
+        if (a.views > b.views) {
+          return -1;
+        } else if (a.views < b.views) {
+          return 1;
+        } else {
+          return 0;
+        }
+      });
+    } else if (sort === "likes") {
+      sortedLists = sortedLists.sort(function (a, b) {
+        if (a.likes.length > b.likes.length) {
+          return -1;
+        } else if (a.likes.length < b.likes.length) {
+          return 1;
+        } else {
+          return 0;
+        }
+      });
+    } else if (sort === "dislikes") {
+      sortedLists = sortedLists.sort(function (a, b) {
+        if (a.dislikes.length > b.dislikes.length) {
+          return -1;
+        } else if (a.dislikes.length < b.dislikes.length) {
+          return 1;
+        } else {
+          return 0;
+        }
+      });
+    } else if (sort === "newest date") {
+      sortedLists = sortedLists.sort(function (a, b) {
+        let d1 = Date.parse(a.publishedDate);
+        let d2 = Date.parse(b.publishedDate);
+        if (d1 > d2) {
+          return -1;
+        } else if (d1 < d2) {
+          return 1;
+        } else {
+          return 0;
+        }
+      });
+    } else if (sort === "oldest date") {
+      sortedLists = sortedLists.sort(function (a, b) {
+        let d1 = Date.parse(a.publishedDate);
+        let d2 = Date.parse(b.publishedDate);
+        if (d1 > d2) {
+          return 1;
+        } else if (d1 < d2) {
+          return -1;
+        } else {
+          return 0;
+        }
+      });
+    }
+    storeReducer({
+      type: GlobalStoreActionType.SET_CURRENT_LISTS,
+      payload: { top5Lists: sortedLists, search: store.search },
+    });
+  };
 
   store.updateView = async function (view) {
     let search = "";
@@ -291,8 +355,10 @@ function GlobalStoreContextProvider(props) {
     store.updateCurrentList().then(() => history.push("/"));
   };
 
-  store.publishList = async function () {
+  store.publishList = async function (name, items) {
     console.log(store.currentList);
+    store.currentList.name = name;
+    store.currentList.items = items;
     store.currentList.published = true;
     var today = new Date();
     store.currentList.publishedDate =
@@ -425,7 +491,21 @@ function GlobalStoreContextProvider(props) {
   store.deleteList = async function (listToDelete) {
     let response = await api.deleteTop5ListById(listToDelete._id);
     if (response.status === 200) {
-      store.loadIdNamePairs();
+      console.log("deleted");
+      let response = await api.searchTop5List(
+        store.search,
+        store.listView,
+        auth.user.username
+      );
+      if (response.status === 200) {
+        console.log(response.data.top5Lists);
+        storeReducer({
+          type: GlobalStoreActionType.SET_CURRENT_LISTS,
+          payload: { top5Lists: response.data.top5Lists, search: store.search },
+        });
+      } else {
+        console.log(response);
+      }
       history.push("/");
     }
   };
@@ -462,23 +542,68 @@ function GlobalStoreContextProvider(props) {
   };
 
   store.updateLikes = async function (top5List) {
-    if(top5List.likes.includes(auth.user.username)){
-      let index = top5List.likes.indexOf(auth.user.username)
+    if (top5List.likes.includes(auth.user.username)) {
+      let index = top5List.likes.indexOf(auth.user.username);
       top5List.likes.splice(index, 1);
-    }
-    else{
+    } else {
       top5List.likes.push(auth.user.username);
     }
 
-    if(top5List.dislikes.includes(auth.user.username)){
-      let index = top5List.dislikes.indexOf(auth.user.username)
+    if (top5List.dislikes.includes(auth.user.username)) {
+      let index = top5List.dislikes.indexOf(auth.user.username);
       top5List.dislikes.splice(index, 1);
     }
+
+    store.updateList(top5List);
+  };
+
+  store.updateDislikes = async function (top5List) {
+    if (top5List.dislikes.includes(auth.user.username)) {
+      let index = top5List.dislikes.indexOf(auth.user.username);
+      top5List.dislikes.splice(index, 1);
+    } else {
+      top5List.dislikes.push(auth.user.username);
+    }
+
+    if (top5List.likes.includes(auth.user.username)) {
+      let index = top5List.likes.indexOf(auth.user.username);
+      top5List.likes.splice(index, 1);
+    }
+
+    store.updateList(top5List);
+  };
+
+  store.updateViews = async function (top5List) {
+    top5List.views = top5List.views + 1;
+    store.updateList(top5List);
+  };
+
+  store.addComment = async function (top5List, comment) {
+    top5List.comments[comment] = auth.user.username;
+    store.updateList(top5List);
   };
 
   store.updateList = async function (top5List) {
-    const response = await api.updateTop5ListById(top5List._id, top5List);
+    const response = await api.updateTop5ListByIdWithoutUser(
+      top5List._id,
+      top5List
+    );
     if (response.status === 200) {
+      console.log("updated");
+      let response = await api.searchTop5List(
+        store.search,
+        store.listView,
+        auth.user.username
+      );
+      if (response.status === 200) {
+        console.log(response.data.top5Lists);
+        storeReducer({
+          type: GlobalStoreActionType.SET_CURRENT_LISTS,
+          payload: { top5Lists: response.data.top5Lists, search: store.search },
+        });
+      } else {
+        console.log(response);
+      }
     }
   };
 
@@ -488,10 +613,21 @@ function GlobalStoreContextProvider(props) {
       store.currentList
     );
     if (response.status === 200) {
-      storeReducer({
-        type: GlobalStoreActionType.SET_CURRENT_LIST,
-        payload: store.currentList,
-      });
+      console.log("updated");
+      let response = await api.searchTop5List(
+        store.search,
+        store.listView,
+        auth.user.username
+      );
+      if (response.status === 200) {
+        console.log(response.data.top5Lists);
+        storeReducer({
+          type: GlobalStoreActionType.SET_CURRENT_LISTS,
+          payload: { top5Lists: response.data.top5Lists, search: store.search },
+        });
+      } else {
+        console.log(response);
+      }
     }
   };
 

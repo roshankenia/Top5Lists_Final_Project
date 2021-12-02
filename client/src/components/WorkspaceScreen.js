@@ -66,7 +66,9 @@ function WorkspaceScreen() {
 
   //response to when one publishes the current list
   function handlePublish() {
-      store.publishList();
+    let name = list;
+    let items = [item1, item2, item3, item4, item5];
+    store.publishList(name, items);
   }
 
   return (
