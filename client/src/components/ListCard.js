@@ -17,6 +17,8 @@ import Grid from "@mui/material/Grid";
 
 import { Typography } from "@mui/material";
 
+import AuthContext from "../auth";
+
 /*
     This is a card in our list of top 5 lists. It lets select
     a list for editing and it has controls for changing its 
@@ -35,6 +37,8 @@ function ListCard(props) {
 
   //Keeps track of current search
   const [comment, setComment] = useState("");
+
+  const { auth } = useContext(AuthContext);
 
   function handleLoadList(event, id) {
     console.log("handleLoadList for " + id);
@@ -107,12 +111,37 @@ function ListCard(props) {
     }
   }
 
+  let likeDisabled = false;
+  let dislikeDisabled = false;
+  let commentDisabled = false;
+  let deleteDisabled = false;
+
+  if (store.isGuest) {
+    likeDisabled = true;
+    dislikeDisabled = true;
+    commentDisabled = true;
+    deleteDisabled = true;
+  } else {
+    if (
+      store.listView === "community" ||
+      auth.user.username !== top5List.username
+    ) {
+      deleteDisabled = true;
+    }
+    if (store.listView !== "community" && !top5List.published) {
+      likeDisabled = true;
+      dislikeDisabled = true;
+      commentDisabled = true;
+    }
+  }
+
   let items = (
     <List
       sx={{
         border: 2,
         borderRadius: 8,
         width: "100%",
+        bgcolor: "#9595f6",
       }}
     >
       {top5List.items.map((item, index) => (
@@ -122,6 +151,52 @@ function ListCard(props) {
       ))}
     </List>
   );
+
+  if (store.listView === "community") {
+    const counts = {};
+    for (const itemName of top5List.items) {
+      let item = itemName.substring(0, itemName.length - 1);
+      let weight = parseInt(itemName.substring(itemName.length - 1));
+      counts[item] = counts[item] ? counts[item] + weight : weight;
+    }
+    let newItems = [];
+
+    let keys = Object.keys(counts);
+    let values = Object.values(counts);
+
+    console.log(keys);
+    console.log(values);
+
+    while (newItems.length !== 5) {
+      let max = Number.MIN_VALUE;
+      let maxName = "";
+
+      for (let i = 0; i < values.length; i++) {
+        if (values[i] > max && !newItems.includes(keys[i])) {
+          max = values[i];
+          maxName = keys[i];
+        }
+      }
+      newItems.push(maxName);
+    }
+
+    items = (
+      <List
+        sx={{
+          border: 2,
+          borderRadius: 8,
+          width: "100%",
+          bgcolor: "#9595f6",
+        }}
+      >
+        {newItems.map((item, index) => (
+          <ListItem key={index}>
+            <Typography>{index + 1 + ". " + item}</Typography>
+          </ListItem>
+        ))}
+      </List>
+    );
+  }
 
   let commentStrings = Object.keys(top5List.comments);
   let commentUsers = Object.values(top5List.comments);
@@ -143,6 +218,7 @@ function ListCard(props) {
             sx={{
               border: 2,
               borderRadius: 8,
+              bgcolor: "#9595f6",
               width: "100%",
               marginTop: "2px",
             }}
@@ -165,17 +241,18 @@ function ListCard(props) {
       <Box
         sx={{
           border: 2,
-          borderRadius: 8,
+          borderRadius: 2,
           width: "100%",
           marginTop: "12px",
         }}
       >
         <TextField
           label="Comment"
-          sx={{ width: "100%"}}
+          sx={{ width: "100%" }}
           margin="normal"
           id={"comment"}
           name="comment"
+          disabled={commentDisabled}
           onKeyPress={handleKeyPress}
           onChange={handleUpdateComment}
           value={comment}
@@ -198,7 +275,19 @@ function ListCard(props) {
     </Link>
   );
 
-  if (top5List.published) {
+  let byElement = (
+    <Typography display="inline">{"By: " + top5List.username}</Typography>
+  );
+
+  if (store.listView === "community") {
+    editOrPublishedElement = (
+      <Typography display="inline">
+        {"Updated: " + top5List.updateDate}
+      </Typography>
+    );
+
+    byElement = <Typography display="inline">{""}</Typography>;
+  } else if (top5List.published) {
     editOrPublishedElement = (
       <Typography display="inline">
         {"Published: " + top5List.publishedDate}
@@ -235,6 +324,7 @@ function ListCard(props) {
           <IconButton
             aria-label="like"
             color="primary"
+            disabled={likeDisabled}
             onClick={(event) => {
               handleLike(event);
             }}
@@ -247,6 +337,7 @@ function ListCard(props) {
           <IconButton
             aria-label="like"
             color="primary"
+            disabled={dislikeDisabled}
             onClick={(event) => {
               handleDislike(event);
             }}
@@ -257,6 +348,7 @@ function ListCard(props) {
         </Grid>
         <Grid item xs={1}>
           <IconButton
+            disabled={deleteDisabled}
             onClick={(event) => {
               handleDeleteList(event, top5List._id);
             }}
@@ -266,7 +358,7 @@ function ListCard(props) {
           </IconButton>
         </Grid>
         <Grid item xs={9}>
-          <Typography display="inline">{"By: " + top5List.username}</Typography>
+          {byElement}
         </Grid>
         <Grid item xs={3}>
           <Typography display="inline">{"Views: " + top5List.views}</Typography>
@@ -318,6 +410,7 @@ function ListCard(props) {
             <IconButton
               aria-label="like"
               color="primary"
+              disabled={likeDisabled}
               onClick={(event) => {
                 handleLike(event);
               }}
@@ -330,6 +423,7 @@ function ListCard(props) {
             <IconButton
               aria-label="like"
               color="primary"
+              disabled={dislikeDisabled}
               onClick={(event) => {
                 handleDislike(event);
               }}
@@ -340,6 +434,7 @@ function ListCard(props) {
           </Grid>
           <Grid item xs={1}>
             <IconButton
+              disabled={deleteDisabled}
               onClick={(event) => {
                 handleDeleteList(event, top5List._id);
               }}
@@ -349,9 +444,7 @@ function ListCard(props) {
             </IconButton>
           </Grid>
           <Grid item xs={12}>
-            <Typography display="inline">
-              {"By: " + top5List.username}
-            </Typography>
+            {byElement}
           </Grid>
 
           <Grid item xs={6}>

@@ -16,7 +16,7 @@ export default function WelcomeScreen() {
     history.push("/");
   }
   return (
-    <Box sx={{ width: "100%", height: "100%" }}>
+    <Box sx={{ width: "100%", height: "100%", background: 'linear-gradient(#f8f8fe, #9595f6)'}}>
       <Typography variant="h1" component="div" gutterBottom align="center">
         The Top 5 Lister
       </Typography>

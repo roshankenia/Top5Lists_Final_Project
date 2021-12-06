@@ -7,7 +7,7 @@ const CommunityListSchema = new Schema(
     items: { type: [String], required: true },
     updateDate: { type: String, required: true },
     comments: { type: Map, of: String, required: true },
-    likes: { type: Map, of: String, required: true },
+    likes: { type: [String], required: true },
     dislikes: { type: [String], required: true },
     views: { type: Number, required: true },
   },

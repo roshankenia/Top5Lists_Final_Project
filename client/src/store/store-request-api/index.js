@@ -61,6 +61,47 @@ export const searchTop5List = (search, listView, username) =>
     username: username,
   });
 
+export const updateCommunityList = (id, communityList) => {
+  return api.put(`/communitylist/${id}`, {
+    // SPECIFY THE PAYLOAD
+    top5List: communityList,
+  });
+};
+export const createCommunityList = (newListName, newItems, updateDate) => {
+  return api.post(`/communitylist/`, {
+    // SPECIFY THE PAYLOAD
+    name: newListName,
+    items: newItems,
+    updateDate: updateDate,
+    comments: {},
+    likes: [],
+    dislikes: [],
+    views: 0,
+  });
+};
+export const deleteCommunityList = (id) => api.delete(`/communitylist/${id}`);
+
+export const searchCommunityListByExactName = (search) =>
+  api.post(`/search/communitylist/exact`, {
+    search: search,
+  });
+
+export const searchCommunityListByStart = (search) =>
+  api.post(`/search/communitylist/start`, {
+    search: search,
+  });
+
+export const searchCommunityListByStartGuest = (search) =>
+  api.post(`/search/communitylist/start/guest/`, {
+    search: search,
+  });
+export const searchTop5ListGuest = (search, listView) =>
+  api.post(`/search/top5list/guest/`, {
+    search: search,
+    listView: listView,
+    username: null,
+  });
+
 const apis = {
   createTop5List,
   deleteTop5ListById,
@@ -69,6 +110,13 @@ const apis = {
   updateTop5ListById,
   searchTop5List,
   updateTop5ListByIdWithoutUser,
+  updateCommunityList,
+  createCommunityList,
+  deleteCommunityList,
+  searchCommunityListByExactName,
+  searchCommunityListByStart,
+  searchCommunityListByStartGuest,
+  searchTop5ListGuest,
 };
 
 export default apis;

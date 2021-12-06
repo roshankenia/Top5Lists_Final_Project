@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import Top5Item from "./Top5Item.js";
 import List from "@mui/material/List";
 import { Typography } from "@mui/material";
@@ -6,6 +6,9 @@ import { GlobalStoreContext } from "../store/index.js";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
+
+import api from "../store/store-request-api";
+import AuthContext from "../auth";
 
 /*
     This React component lets us edit a loaded list, which only
@@ -15,6 +18,7 @@ import Grid from "@mui/material/Grid";
 */
 function WorkspaceScreen() {
   const { store } = useContext(GlobalStoreContext);
+  const { auth } = useContext(AuthContext);
 
   let top5List = store.currentList;
 
@@ -25,35 +29,82 @@ function WorkspaceScreen() {
   const [item3, setItem3] = useState(top5List.items[2]);
   const [item4, setItem4] = useState(top5List.items[3]);
   const [item5, setItem5] = useState(top5List.items[4]);
+  const [publishDisabled, setPublishDisabled] = useState(false);
+  const [saveDisabled, setSaveDisabled] = useState(false);
+
+  useEffect(() => {
+    checkSaveOrPublish(list, item1, item2, item3, item4, item5);
+  }, []);
 
   // Response for when a keyboard key is pressed for list
   function handleUpdateList(event) {
     setList(event.target.value);
+    checkSaveOrPublish(event.target.value, item1, item2, item3, item4, item5);
   }
 
   // Response for when a keyboard key is pressed for item 1
   function handleUpdateItem1(event) {
     setItem1(event.target.value);
+    checkSaveOrPublish(list, event.target.value, item2, item3, item4, item5);
   }
 
   // Response for when a keyboard key is pressed for item 2
   function handleUpdateItem2(event) {
     setItem2(event.target.value);
+    checkSaveOrPublish(list, item1, event.target.value, item3, item4, item5);
   }
 
   // Response for when a keyboard key is pressed for item 3
   function handleUpdateItem3(event) {
     setItem3(event.target.value);
+    checkSaveOrPublish(list, item1, item2, event.target.value, item4, item5);
   }
 
   // Response for when a keyboard key is pressed for item 4
   function handleUpdateItem4(event) {
     setItem4(event.target.value);
+    checkSaveOrPublish(list, item1, item2, item3, event.target.value, item5);
   }
 
   // Response for when a keyboard key is pressed for item 5
   function handleUpdateItem5(event) {
     setItem5(event.target.value);
+    checkSaveOrPublish(list, item1, item2, item3, item4, event.target.value);
+  }
+
+  async function checkSaveOrPublish(list, item1, item2, item3, item4, item5) {
+    let response = await api.searchTop5List("", "yours", auth.user.username);
+    let pDisabled = false;
+    let items = [item1, item2, item3, item4, item5];
+    let sDisabled = false;
+    let regEx = /^[0-9a-zA-Z]+$/;
+    for (let i = 0; i < items.length; i++) {
+      let firstChar = items[i].substring(0, 1);
+      if (!firstChar.match(regEx)) {
+        pDisabled = true;
+      }
+      for (let j = 0; j < items.length; j++) {
+        if (i !== j && items[i] === items[j]) {
+          pDisabled = true;
+        }
+      }
+    }
+    if (response.status === 200) {
+      for (let i = 0; i < response.data.top5Lists.length; i++) {
+        let responseList = response.data.top5Lists[i];
+        if (list.toLowerCase() === responseList.name.toLowerCase() && responseList.published) {
+          console.log("change");
+          pDisabled = true;
+        }
+      }
+      if (list === "") {
+        pDisabled = true;
+      }
+      setPublishDisabled(pDisabled);
+    } else {
+      console.log(response);
+    }
+    setSaveDisabled(sDisabled);
   }
 
   // Response to when one saves the currently edited list
@@ -162,6 +213,7 @@ function WorkspaceScreen() {
             variant="contained"
             color="success"
             size="large"
+            disabled={saveDisabled}
             sx={{ mt: 2, minHeight: "75px" }}
             onClick={(event) => {
               handleSave();
@@ -173,6 +225,7 @@ function WorkspaceScreen() {
             variant="contained"
             color="success"
             size="large"
+            disabled={publishDisabled}
             sx={{ mt: 2, minHeight: "75px" }}
             onClick={(event) => {
               handlePublish();

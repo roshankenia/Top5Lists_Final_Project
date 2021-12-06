@@ -74,13 +74,18 @@ const HomeScreen = () => {
     handleMenuClose();
   }
 
+  let yoursDisabled = false;
+  if(store.isGuest){
+    yoursDisabled = true;
+  }
+
   let listCard = <List></List>;
   if (store.currentLists) {
     listCard = (
       <List
         sx={{
           width: "100%",
-          bgcolor: "background.paper",
+          background: 'linear-gradient(#f8f8fe, #9595f6)',
           position: "relative",
           overflow: "auto",
           maxHeight: Math.round(height / 1.75),
@@ -100,6 +105,7 @@ const HomeScreen = () => {
             <IconButton
               aria-label="yours"
               color="primary"
+              disabled = {yoursDisabled}
               onClick={(event) => {
                 changeLists(event, "yours");
               }}
@@ -145,6 +151,9 @@ const HomeScreen = () => {
               aria-label="community lists"
               color="primary"
               size="large"
+              onClick={(event) => {
+                changeLists(event, "community");
+              }}
             >
               <FunctionsIcon
                 sx={{
